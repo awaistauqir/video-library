@@ -7,13 +7,19 @@ import captureVideoFrame from 'capture-video-frame';
 import { ref, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
 import { addDoc, collection, serverTimestamp } from '@firebase/firestore';
 const AddVideo = () => {
-	const [videoFilePath, setVideoFilePath] = useState(null);
+	const [videoFilePath, setVideoFilePath] = useState('');
 	const [imageURL, setImageURL] = useState(null);
 	const videoRef = useRef();
 	const playerRef = useRef();
 	const handleVideoUpload = (event) => {
 		setImageURL(null);
 		setVideoFilePath(URL.createObjectURL(event.target.files[0]));
+		console.log(event.target);
+	};
+	const captureThumbnail = () => {
+		const frame = captureVideoFrame(playerRef.current.getInternalPlayer());
+		setImageURL(frame);
+		console.log('captured frame', frame);
 	};
 
 	const handleUpload = async () => {
@@ -71,6 +77,8 @@ const AddVideo = () => {
 											timestamp: serverTimestamp(),
 										});
 										window.alert('added successfully');
+										setImageURL(null);
+										setVideoFilePath(null);
 									}
 								);
 							}
@@ -79,58 +87,70 @@ const AddVideo = () => {
 				);
 			}
 		);
-		setImageURL(null);
-		setVideoFilePath(null);
 	};
 	return (
-		<AddContainer>
-			<VideoContainer>
-				<Label htmlfor="video-upload">
-					Add Video
-					<input
-						id="video-upload"
-						type="file"
-						onChange={handleVideoUpload}
-						accept="video/mp4"
-						ref={videoRef}
-					/>
-				</Label>
-				<ReactPlayer url={videoFilePath} controls={true} ref={playerRef} />
-			</VideoContainer>
-			<ThumbnailContainer>
-				<div>
-					<Button
-						onClick={() => {
-							const frame = captureVideoFrame(
-								playerRef.current.getInternalPlayer()
-							);
-							setImageURL(frame);
-							console.log('captured frame', frame);
-						}}
-						disabled={!videoFilePath}
-					>
-						Capture
-					</Button>
+		<Container>
+			<AddContainer>
+				<Step>
+					<h1>Step 1</h1>
+					<VideoContainer>
+						<Label htmlfor="video-upload">
+							Add Video
+							<input
+								id="video-upload"
+								type="file"
+								onChange={handleVideoUpload}
+								accept="video/mp4"
+								ref={videoRef}
+							/>
+						</Label>
+						{videoFilePath && (
+							<ReactPlayer
+								url={videoFilePath}
+								controls={true}
+								ref={playerRef}
+								width="400px"
+							/>
+						)}
+					</VideoContainer>
+				</Step>
+				<Step>
+					<h1>Step 2</h1>
+					<ThumbnailContainer>
+						<div>
+							<Button onClick={captureThumbnail} disabled={!videoFilePath}>
+								Capture
+							</Button>
+						</div>
+						{imageURL && <img src={imageURL?.dataUri} alt="Video Thumnail" />}
+					</ThumbnailContainer>
+				</Step>
+				<Step>
+					<h1>Step 3</h1>
 					<Button
 						onClick={handleUpload}
 						disabled={!(videoRef.current?.files[0] && imageURL)}
 					>
 						Upload Video+Poster
 					</Button>
-				</div>
-				{imageURL && <img src={imageURL?.dataUri} alt="Video Thumnail" />}
-			</ThumbnailContainer>
-		</AddContainer>
+				</Step>
+			</AddContainer>
+		</Container>
 	);
 };
 
 export default AddVideo;
-const AddContainer = styled.div`
-	padding: 2rem;
+const Container = styled.div`
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	gap: 2rem;
+`;
+const AddContainer = styled.div`
+	display: flex;
+	justify-content: flex-start;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 1rem;
 `;
 const VideoContainer = styled.div`
 	height: 100%;
@@ -139,9 +159,13 @@ const VideoContainer = styled.div`
 	}
 `;
 const ThumbnailContainer = styled.div`
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+
 	img {
-		object-fit: contain;
-		max-width: 600px;
+		max-width: 500px;
+		max-height: 400px;
 	}
 `;
 const Button = styled.button`
@@ -149,7 +173,6 @@ const Button = styled.button`
 	background-color: #28b463;
 	outline: none;
 	border: none;
-	margin: 1rem;
 	border-radius: 8px;
 	font-size: 1rem;
 	font-weight: 600;
@@ -166,14 +189,21 @@ const Button = styled.button`
 `;
 const Label = styled.label`
 	padding: 0.5rem 1rem;
+	display: inline-block;
 	font-weight: 600;
 	background: #3b49df;
-	margin-top: 15rem;
 	color: #f3f3f3;
 	border-radius: 8px;
 	cursor: pointer;
-	margin: 3rem;
 	input {
 		display: none;
 	}
+`;
+const Step = styled.div`
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-start;
+	align-items: flex-start;
+	gap: 2rem;
+	margin: 1rem 0;
 `;

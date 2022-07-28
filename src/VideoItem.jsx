@@ -15,5 +15,7 @@ const Card = styled.div`
 
 	video {
 		border-radius: 1rem;
+		width: 400px;
+		object-fit: contain;
 	}
 `;
