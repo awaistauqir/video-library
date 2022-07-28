@@ -127,26 +127,30 @@ const AddVideo = () => {
 						)}
 					</VideoContainer>
 				</Step>
-				<Step>
-					<h1>Step 2</h1>
-					<ThumbnailContainer>
-						<div>
-							<Button onClick={captureThumbnail} disabled={!videoFilePath}>
-								Capture Thumbnail
-							</Button>
-						</div>
-						{imageURL && <img src={imageURL?.dataUri} alt="Video Thumnail" />}
-					</ThumbnailContainer>
-				</Step>
-				<Step>
-					<h1>Step 3</h1>
-					<Button
-						onClick={handleUpload}
-						disabled={!(videoRef.current?.files[0] && imageURL)}
-					>
-						Upload Video
-					</Button>
-				</Step>
+				{videoFilePath && (
+					<Step>
+						<h1>Step 2</h1>
+						<ThumbnailContainer>
+							<div>
+								<Button onClick={captureThumbnail} disabled={!videoFilePath}>
+									Capture Thumbnail
+								</Button>
+							</div>
+							{imageURL && <img src={imageURL?.dataUri} alt="Video Thumnail" />}
+						</ThumbnailContainer>
+					</Step>
+				)}
+				{imageURL && (
+					<Step>
+						<h1>Step 3</h1>
+						<Button
+							onClick={handleUpload}
+							disabled={!(videoRef.current?.files[0] && imageURL)}
+						>
+							Upload Video
+						</Button>
+					</Step>
+				)}
 			</AddContainer>
 		</Container>
 	);
