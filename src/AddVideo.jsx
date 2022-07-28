@@ -1,6 +1,7 @@
 import styled from 'styled-components';
 import { useRef, useState } from 'react';
-
+import Alert from '@mui/material/Alert';
+import LinearProgress from '@mui/material/LinearProgress';
 import ReactPlayer from 'react-player';
 import { db, storage } from './firebase';
 import captureVideoFrame from 'capture-video-frame';
@@ -9,12 +10,14 @@ import { addDoc, collection, serverTimestamp } from '@firebase/firestore';
 const AddVideo = () => {
 	const [videoFilePath, setVideoFilePath] = useState('');
 	const [imageURL, setImageURL] = useState(null);
+	const [success, setSuccess] = useState(null);
+	const [error, setError] = useState(null);
+	const [uploading, setUploading] = useState(null);
 	const videoRef = useRef();
 	const playerRef = useRef();
 	const handleVideoUpload = (event) => {
 		setImageURL(null);
 		setVideoFilePath(URL.createObjectURL(event.target.files[0]));
-		console.log(event.target);
 	};
 	const captureThumbnail = () => {
 		const frame = captureVideoFrame(playerRef.current.getInternalPlayer());
@@ -43,53 +46,65 @@ const AddVideo = () => {
 		uploadVideoTask.on(
 			'state_changed',
 			(snapshot) => {
-				console.log('uploading video');
+				const uploadProgress =
+					(snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+				setUploading(true);
 			},
 			(error) => {
-				console.log(error);
-				window.alert(error);
+				setUploading(false);
 			},
-			async () => {
-				await getDownloadURL(uploadVideoTask.snapshot.ref).then(
-					(downloadURL) => {
-						v = downloadURL;
-						uploadThumbnailTask.on(
-							'state_changed',
+			() => {
+				getDownloadURL(uploadVideoTask.snapshot.ref).then((downloadURL) => {
+					v = downloadURL;
+					uploadThumbnailTask.on(
+						'state_changed',
 
-							(snapshot) => {
-								console.log('uploading capture');
-
-								const progress =
-									(snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-
-								console.log('Thumbnail Upload is ', progress + '% done');
-							},
-							(error) => {
-								console.log(error);
-							},
-							() => {
-								getDownloadURL(uploadThumbnailTask.snapshot.ref).then(
-									(downloadURL) => {
-										console.log(downloadURL);
-										addDoc(collection(db, 'videos'), {
-											videoURL: v,
-											thumbnailURL: downloadURL,
-											timestamp: serverTimestamp(),
-										});
-										window.alert('added successfully');
-										setImageURL(null);
-										setVideoFilePath(null);
-									}
-								);
-							}
-						);
-					}
-				);
+						(snapshot) => {},
+						(error) => {
+							window.alert(error);
+							setUploading(false);
+						},
+						() => {
+							getDownloadURL(uploadThumbnailTask.snapshot.ref).then(
+								(downloadURL) => {
+									addDoc(collection(db, 'videos'), {
+										videoURL: v,
+										thumbnailURL: downloadURL,
+										timestamp: serverTimestamp(),
+									});
+									setSuccess({
+										success: true,
+										message: 'Video uploaded successfully.',
+									});
+									setImageURL(null);
+									setVideoFilePath(null);
+									setUploading(false);
+								}
+							);
+						}
+					);
+				});
 			}
 		);
 	};
 	return (
 		<Container>
+			{uploading && (
+				<Progress>
+					<LinearProgress />
+				</Progress>
+			)}
+			<AlertMessage>
+				{success && (
+					<Alert
+						onClose={() => {
+							setSuccess(null);
+						}}
+					>
+						{success.message}
+					</Alert>
+				)}
+			</AlertMessage>
 			<AddContainer>
 				<Step>
 					<h1>Step 1</h1>
@@ -119,7 +134,7 @@ const AddVideo = () => {
 					<ThumbnailContainer>
 						<div>
 							<Button onClick={captureThumbnail} disabled={!videoFilePath}>
-								Capture
+								Capture Thumbnail
 							</Button>
 						</div>
 						{imageURL && <img src={imageURL?.dataUri} alt="Video Thumnail" />}
@@ -131,7 +146,7 @@ const AddVideo = () => {
 						onClick={handleUpload}
 						disabled={!(videoRef.current?.files[0] && imageURL)}
 					>
-						Upload Video+Poster
+						Upload Video
 					</Button>
 				</Step>
 			</AddContainer>
@@ -144,6 +159,19 @@ const Container = styled.div`
 	display: flex;
 	justify-content: center;
 	align-items: center;
+`;
+const Progress = styled.div`
+	position: fixed;
+	top: 5%;
+	width: 500px;
+	max-width: 60%;
+	padding: 1.5rem 2rem;
+	border: 8px;
+	background-color: lightgray;
+`;
+const AlertMessage = styled.div`
+	position: fixed;
+	top: 5%;
 `;
 const AddContainer = styled.div`
 	display: flex;
