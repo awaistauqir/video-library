@@ -11,7 +11,6 @@ const AddVideo = () => {
 	const [videoFilePath, setVideoFilePath] = useState('');
 	const [imageURL, setImageURL] = useState(null);
 	const [success, setSuccess] = useState(null);
-	const [error, setError] = useState(null);
 	const [uploading, setUploading] = useState(null);
 	const videoRef = useRef();
 	const playerRef = useRef();
@@ -46,8 +45,6 @@ const AddVideo = () => {
 		uploadVideoTask.on(
 			'state_changed',
 			(snapshot) => {
-				const uploadProgress =
-					(snapshot.bytesTransferred / snapshot.totalBytes) * 100;
 				setUploading(true);
 			},
 			(error) => {
@@ -106,6 +103,7 @@ const AddVideo = () => {
 				)}
 			</AlertMessage>
 			<AddContainer>
+				<Heading>Video Task</Heading>
 				<Step>
 					<h1>Step 1</h1>
 					<VideoContainer>
@@ -179,6 +177,11 @@ const AddContainer = styled.div`
 	flex-direction: column;
 	align-items: flex-start;
 	gap: 1rem;
+`;
+const Heading = styled.h1`
+	text-align: center;
+	padding-top: 1rem;
+	font-size: 2.25rem;
 `;
 const VideoContainer = styled.div`
 	height: 100%;
